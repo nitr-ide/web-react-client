@@ -1,0 +1,23 @@
+.ide-container {
+    height: 100vh;
+    width: 100%;
+
+    display: flex;
+}
+
+.editor-container {
+    display: flex;
+    flex: 0 0 75%;
+}
+
+.options-container {
+    width: 25%;
+    height: 100%;
+    background-color: #111111;
+    color: white;
+
+    display: flex;
+    flex-direction: column;
+
+    padding: 2rem;
+}
