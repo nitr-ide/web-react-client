@@ -12,9 +12,11 @@ class App extends Component {
     super(props);
     this.state = {
       code: "",
+      currentRequest: null,
     };
     this.onChange = this.onChange.bind(this);
     this.submitCode = this.submitCode.bind(this);
+    this.pollForStatus = this.pollForStatus.bind(this);
   }
 
   onChange(currentCode, event) {
@@ -22,6 +24,38 @@ class App extends Component {
       code: currentCode,
     });
   }
+
+  pollForStatus = (count) => {
+    if (count > 20) {
+      alert("Timeout!");
+      return;
+    }
+
+    let taskData = this.state.currentRequest;
+
+    axios
+      .get("http://localhost:5100/status", {
+        params: { taskID: taskData["id"] },
+      })
+      .then(({ data }) => {
+        console.log(data);
+
+        this.setState({
+          currentRequest: data,
+        });
+
+        if (this.state.currentRequest["status"] !== 2) {
+          setTimeout(() => {
+            this.pollForStatus(count + 1);
+          }, 500);
+        } else {
+          console.log("Task complete!");
+        }
+      })
+      .catch((err) => {
+        throw err;
+      });
+  };
 
   submitCode() {
     const requestBody = JSON.stringify({
@@ -35,8 +69,13 @@ class App extends Component {
           "Content-Type": "application/json",
         },
       })
-      .then((response) => {
-        console.log(response);
+      .then(({ data }) => {
+        console.log(data);
+        this.setState({
+          currentRequest: data,
+        });
+        console.log(this.state);
+        this.pollForStatus(0);
       })
       .catch((err) => {
         throw err;
@@ -64,6 +103,26 @@ class App extends Component {
         />
         <div className="options-container">
           <button onClick={this.submitCode}>Submit</button>
+          <hr />
+          <div>
+            {this.state.currentRequest &&
+            this.state.currentRequest["status"] !== 2
+              ? "Running task"
+              : "Task Completed!"}
+          </div>
+          <div>
+            {this.state.currentRequest &&
+            this.state.currentRequest["status"] === 2
+              ? this.state.currentRequest["output"]
+              : ""}
+          </div>
+          <div>
+            {this.state.currentRequest &&
+            this.state.currentRequest["status"] === 2
+              ? (new Date(this.state.currentRequest["completedAt"]).getTime() -
+                new Date(this.state.currentRequest["startedAt"]).getTime()).toString() + "ms"
+              : ""}
+          </div>
         </div>
       </div>
     );
